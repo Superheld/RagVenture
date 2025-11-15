@@ -114,7 +114,7 @@ textadventure/
 ---
 
 
-## 🗺️ Roadmap
+## 🗺️ Roadmap - Plus Extrafeaturs :D
 
 ### Phase 1: MVP Foundation (Woche 1)
 
@@ -165,6 +165,7 @@ textadventure/
 - [ ] Embeddings-basierte Intent-Erkennung (sentence-transformers)
 - [ ] Fuzzy-Matching für Objekt/NPC-Namen
 - [ ] **LLM-Parser**: Komplexe Mehrfach-Befehle verstehen
+- [ ] **MCP Integration evaluieren**: Parser als Model Context Protocol
 - [ ] Disambiguation: "Welchen Schlüssel meinst du?" bei Mehrdeutigkeit
 - [ ] Synonym-Handling (gehen/laufen/rennen)
 
@@ -172,7 +173,34 @@ textadventure/
 
 ---
 
-### Phase 5: Advanced AI Features
+### Phase 5: Infrastructure Upgrade
+
+**LangChain/LangGraph Migration:**
+- [ ] LangChain Service-Layer aufbauen
+- [ ] Bestehende LLM-Calls auf LangChain migrieren
+- [ ] LangGraph für komplexe Flows evaluieren
+- [ ] Chain-Templates & Prompt-Management
+- [ ] Memory & Context-Management mit LangChain
+
+**TUI Advanced:**
+- [ ] ASCII Art System (statische Files + später LLM-generiert)
+- [ ] Advanced Layouts (Multi-Panel, Split-Screens, Live-Updates)
+- [ ] Animationen (Typing-Effekt, Fade-Ins, Transitions)
+- [ ] Textual Library evaluieren (falls Rich Grenzen erreicht)
+- [ ] Custom Themes & Color-Schemes
+
+**Code Quality & Validation:**
+- [ ] Pydantic Models für alle Daten-Strukturen
+- [ ] Input-Validierung (Commands, User-Input)
+- [ ] Neo4j Response-Validierung
+- [ ] LLM Output-Validierung (structured output)
+- [ ] Error-Handling durchgängig verbessern
+
+**Milestone**: Solide Foundation für komplexe AI-Features
+
+---
+
+### Phase 6: Advanced AI Features
 
 **RAG & Memory:**
 - [ ] RAG für NPC-Weltwissen (Lore, Geschichte, Gerüchte)
@@ -194,7 +222,7 @@ textadventure/
 
 ---
 
-### Phase 6: Analytics & Meta-Features
+### Phase 7: Analytics & Meta-Features
 
 - [ ] Event-Logging (DuckDB) für Player-Behaviour
 - [ ] Sentiment-Analyse von Spieler-Eingaben
@@ -206,7 +234,7 @@ textadventure/
 
 ---
 
-### Phase 7: Experimentelle Features
+### Phase 8: Experimentelle Features
 
 - [ ] **Voice-to-Text**: Speak to NPCs
 - [ ] **Multi-Modal**: DALL-E/Stable Diffusion für Raum-Visuals
