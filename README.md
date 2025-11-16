@@ -95,6 +95,30 @@ NEO4J_USER=neo4j
 NEO4J_PASSWORD=password
 ```
 
+### 5. Spielwelt in Neo4j initialisieren
+
+```bash
+# Jupyter Notebook starten
+jupyter notebook
+
+# Im Browser: notebooks/01-neo4j_dbsetup.ipynb öffnen
+# Alle Zellen nacheinander ausführen (Cell → Run All)
+```
+
+**Was das Notebook macht:**
+- Erstellt Constraints für eindeutige IDs (Location, Item, NPC, Player)
+- Erstellt Performance-Indexes
+- Generiert die Basis-Spielwelt (3 Locations, NPCs, Items)
+- Verknüpft alles mit Relationships
+
+**Bei Problemen / Neustart:**
+```python
+# Alle Daten löschen (nur wenn nötig!)
+MATCH (n) DETACH DELETE n
+
+# Dann Notebook erneut komplett durchlaufen
+```
+
 ---
 
 ## 🗂️ Projektstruktur
