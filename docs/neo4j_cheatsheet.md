@@ -4,281 +4,118 @@ Schnellreferenz für Neo4j Graph-Datenbank und Cypher Query Language.
 
 ---
 
-## 🏗️ Schema Setup
+## 🎯 Cypher Grundlagen
 
-### Constraints (Eindeutigkeit sicherstellen)
-
+### Kommentare
 ```cypher
-// Eindeutige IDs für alle Node-Typen
-CREATE CONSTRAINT room_id IF NOT EXISTS
-FOR (r:Room) REQUIRE r.id IS UNIQUE;
-
-CREATE CONSTRAINT item_id IF NOT EXISTS
-FOR (i:Item) REQUIRE i.id IS UNIQUE;
-
-CREATE CONSTRAINT npc_id IF NOT EXISTS
-FOR (n:NPC) REQUIRE n.id IS UNIQUE;
-
-CREATE CONSTRAINT player_id IF NOT EXISTS
-FOR (p:Player) REQUIRE p.id IS UNIQUE;
+// Einzeiliger Kommentar
+/* Mehrzeiliger Kommentar */
 ```
 
-### Indexes (Performance)
-
+### CREATE - Nodes erstellen
 ```cypher
-// Schnellere Suche nach Namen
-CREATE INDEX room_name IF NOT EXISTS
-FOR (r:Room) ON (r.name);
+CREATE (n:Person {name: "Alice", age: 30})
 
-CREATE INDEX item_name IF NOT EXISTS
-FOR (i:Item) ON (i.name);
-
-CREATE INDEX npc_name IF NOT EXISTS
-FOR (n:NPC) ON (n.name);
+// Mehrere Nodes + Relationship
+CREATE (a:Person {name: "Alice"})-[:KNOWS {since: 2020}]->(b:Person {name: "Bob"})
 ```
 
-### Schema anzeigen
-
+### MERGE - Create or Match (verhindert Duplikate)
 ```cypher
-// Alle Constraints
-SHOW CONSTRAINTS
+// Nur nach ID suchen, Rest mit SET
+MERGE (p:Person {id: "alice123"})
+SET p.name = "Alice", p.age = 30
 
-// Alle Indexes
-SHOW INDEXES
-
-// Datenbank-Statistik
-CALL db.schema.visualization()
+// Mit ON CREATE / ON MATCH
+MERGE (p:Person {id: "alice123"})
+ON CREATE SET p.created = timestamp(), p.name = "Alice"
+ON MATCH SET p.updated = timestamp()
 ```
 
----
-
-## 🎮 Daten erstellen - CREATE
-
-### Nodes erstellen
-
+### MATCH - Daten abfragen
 ```cypher
-// Einzelne Node
-CREATE (r:Room {
-  id: "thronsaal",
-  name: "Thronsaal",
-  description: "Ein prächtiger Raum mit goldenen Säulen."
-})
-
-// Mehrere Nodes
-CREATE
-  (throne:Room {id: "thronsaal", name: "Thronsaal", description: "..."}),
-  (dungeon:Room {id: "kerker", name: "Kerker", description: "..."}),
-  (key:Item {id: "schluessel", name: "Rostiger Schlüssel"}),
-  (guard:NPC {id: "waechter", name: "Wächter"})
-```
-
-### Relationships erstellen
-
-```cypher
-// Räume verbinden (bidirektional)
-MATCH (a:Room {id: "thronsaal"})
-MATCH (b:Room {id: "kerker"})
-CREATE (a)-[:CONNECTED_TO {direction: "norden"}]->(b)
-CREATE (b)-[:CONNECTED_TO {direction: "süden"}]->(a)
-
-// Item in Raum platzieren
-MATCH (r:Room {id: "thronsaal"})
-MATCH (i:Item {id: "schwert"})
-CREATE (r)-[:CONTAINS]->(i)
-
-// Player positionieren
-MATCH (p:Player {id: "player1"})
-MATCH (r:Room {id: "thronsaal"})
-CREATE (p)-[:LOCATED_IN]->(r)
-```
-
-### Alles in einem Statement
-
-```cypher
-CREATE
-  (a:Room {id: "thronsaal", name: "Thronsaal"}),
-  (b:Room {id: "kerker", name: "Kerker"}),
-  (key:Item {id: "schluessel", name: "Schlüssel"}),
-  (player:Player {id: "player1", name: "Held"}),
-
-  (a)-[:CONNECTED_TO {direction: "norden"}]->(b),
-  (b)-[:CONNECTED_TO {direction: "süden"}]->(a),
-  (b)-[:CONTAINS]->(key),
-  (player)-[:LOCATED_IN]->(a)
-```
-
----
-
-## 🔍 Daten abfragen - MATCH
-
-### Einfache Queries
-
-```cypher
-// Alle Räume
-MATCH (r:Room)
-RETURN r
-
-// Raum nach ID
-MATCH (r:Room {id: "thronsaal"})
-RETURN r
-
-// Nur bestimmte Properties
-MATCH (r:Room {id: "thronsaal"})
-RETURN r.name, r.description
+// Node finden
+MATCH (p:Person {name: "Alice"})
+RETURN p.name, p.age
 
 // Mit WHERE-Filter
-MATCH (r:Room)
-WHERE r.name CONTAINS "Kammer"
-RETURN r
+MATCH (p:Person)
+WHERE p.age > 25 AND p.name CONTAINS "Ali"
+RETURN p
 ```
 
 ### Relationships abfragen
-
 ```cypher
-// Alle Ausgänge eines Raums
-MATCH (current:Room {id: "thronsaal"})-[conn:CONNECTED_TO]->(neighbor:Room)
-RETURN neighbor.name, conn.direction
+// Gerichtete Beziehung
+MATCH (a:Person)-[:KNOWS]->(b:Person)
+RETURN a.name, b.name
 
-// Items in einem Raum
-MATCH (r:Room {id: "thronsaal"})-[:CONTAINS]->(i:Item)
-RETURN i.name, i.description
-
-// Player-Position
-MATCH (p:Player {id: "player1"})-[:LOCATED_IN]->(r:Room)
-RETURN r.id, r.name
-
-// Player-Inventar
-MATCH (p:Player {id: "player1"})-[:CARRIES]->(i:Item)
-RETURN collect(i.name) as inventory
+// Beliebige Richtung
+MATCH (a:Person)-[:KNOWS]-(b:Person)
+RETURN a, b
 ```
 
-### Komplexe Queries
-
+### SET - Properties ändern
 ```cypher
-// Raum mit allen Details (Ausgänge + Items)
-MATCH (r:Room {id: "thronsaal"})
-OPTIONAL MATCH (r)-[conn:CONNECTED_TO]->(neighbor:Room)
-OPTIONAL MATCH (r)-[:CONTAINS]->(item:Item)
-RETURN
-  r.name,
-  r.description,
-  collect(DISTINCT {direction: conn.direction, room: neighbor.name}) as exits,
-  collect(DISTINCT item.name) as items
+MATCH (p:Person {name: "Alice"})
+SET p.age = 31, p.city = "Berlin"
 
-// Alle NPCs mit ihren Räumen
-MATCH (npc:NPC)-[:LOCATED_IN]->(r:Room)
-RETURN npc.name, r.name as location
+// Property löschen
+MATCH (p:Person {name: "Alice"})
+REMOVE p.age
 ```
 
----
-
-## ✏️ Daten ändern - SET / DELETE
-
-### Properties ändern
-
+### DELETE - Daten löschen
 ```cypher
-// Property setzen
-MATCH (npc:NPC {id: "waechter"})
-SET npc.mood = "angry"
+// Node mit allen Relationships
+MATCH (p:Person {name: "TestUser"})
+DETACH DELETE p
 
-// Property erhöhen/verringern
-MATCH (p:Player {id: "player1"})
-SET p.health = p.health - 10
+// Nur Relationship
+MATCH (a)-[r:KNOWS]->(b)
+DELETE r
 
-// Mehrere Properties
-MATCH (r:Room {id: "kerker"})
-SET r.visited = true, r.light_level = "dark"
+// ALLE Daten (VORSICHT!)
+MATCH (n) DETACH DELETE n
 ```
 
-### Daten löschen
-
+### Aggregation & Sortierung
 ```cypher
-// Nur Relationship löschen
-MATCH (r:Room)-[rel:CONTAINS]->(i:Item {id: "trash"})
-DELETE rel
+// Zählen
+MATCH (p:Person)
+RETURN count(p)
 
-// Node + alle Relationships
-MATCH (i:Item {id: "trash"})
-DETACH DELETE i
+// Sammeln
+MATCH (p:Person)-[:OWNS]->(i:Item)
+RETURN p.name, collect(i.name) as items
 
-// Alles löschen (VORSICHT!)
-MATCH (n)
-DETACH DELETE n
+// Sortieren & Limitieren
+MATCH (p:Person)
+RETURN p.name, p.age
+ORDER BY p.age DESC
+LIMIT 10
 ```
 
 ---
 
-## 🎯 Game-spezifische Patterns
+## 🏗️ Schema & Constraints
 
-### Player bewegen
-
+### Constraints erstellen
 ```cypher
-// Player zu neuem Raum bewegen
-MATCH (p:Player {id: $player_id})-[old:LOCATED_IN]->(:Room)
-MATCH (current:Room)<-[:LOCATED_IN]-(p)
-MATCH (current)-[:CONNECTED_TO {direction: $direction}]->(next:Room)
-DELETE old
-CREATE (p)-[:LOCATED_IN]->(next)
-RETURN next.id, next.name, next.description
+// Eindeutige ID
+CREATE CONSTRAINT room_id IF NOT EXISTS
+FOR (r:Room) REQUIRE r.id IS UNIQUE;
+
+// Index für Performance
+CREATE INDEX room_name IF NOT EXISTS
+FOR (r:Room) ON (r.name);
 ```
 
-### Item aufnehmen
-
+### Schema anzeigen
 ```cypher
-// Item von Raum zu Player
-MATCH (p:Player {id: $player_id})-[:LOCATED_IN]->(r:Room)
-MATCH (r)-[rel:CONTAINS]->(item:Item {id: $item_id})
-DELETE rel
-CREATE (p)-[:CARRIES]->(item)
-RETURN item.name + " aufgenommen!"
-```
-
-### Item ablegen
-
-```cypher
-// Item von Player zu Raum
-MATCH (p:Player {id: $player_id})-[rel:CARRIES]->(item:Item {id: $item_id})
-MATCH (p)-[:LOCATED_IN]->(r:Room)
-DELETE rel
-CREATE (r)-[:CONTAINS]->(item)
-RETURN item.name + " abgelegt!"
-```
-
-### Raum-Info mit allem
-
-```cypher
-// Komplette Raum-Info für UI
-MATCH (p:Player {id: $player_id})-[:LOCATED_IN]->(r:Room)
-OPTIONAL MATCH (r)-[conn:CONNECTED_TO]->(neighbor:Room)
-OPTIONAL MATCH (r)-[:CONTAINS]->(item:Item)
-OPTIONAL MATCH (npc:NPC)-[:LOCATED_IN]->(r)
-RETURN
-  r.id,
-  r.name,
-  r.description,
-  collect(DISTINCT {direction: conn.direction, room: neighbor.name}) as exits,
-  collect(DISTINCT item.name) as items,
-  collect(DISTINCT npc.name) as npcs
-```
-
-### Quest-System
-
-```cypher
-// NPC will Item haben
-MATCH (npc:NPC {id: "waechter"})
-MATCH (item:Item {id: "schluessel"})
-CREATE (npc)-[:WANTS]->(item)
-
-// NPC gibt Belohnung
-MATCH (npc:NPC {id: "waechter"})
-MATCH (reward:Item {id: "gold"})
-CREATE (npc)-[:GIVES]->(reward)
-
-// Quest-Check
-MATCH (p:Player {id: $player_id})-[:CARRIES]->(item:Item)
-MATCH (npc:NPC {id: $npc_id})-[:WANTS]->(wanted:Item)
-WHERE item.id = wanted.id
-RETURN "Quest erfüllbar!" as status
+SHOW CONSTRAINTS
+SHOW INDEXES
+CALL db.schema.visualization()
 ```
 
 ---
@@ -286,89 +123,39 @@ RETURN "Quest erfüllbar!" as status
 ## 🐍 Python Integration
 
 ### Connection Setup
-
 ```python
 from neo4j import GraphDatabase
 
-class GameDB:
-    def __init__(self, uri, user, password):
-        self.driver = GraphDatabase.driver(uri, auth=(user, password))
+driver = GraphDatabase.driver(
+    "bolt://localhost:7687",
+    auth=("neo4j", "password")
+)
 
-    def close(self):
-        self.driver.close()
+# Query ausführen
+def run_query(query, params=None):
+    with driver.session() as session:
+        result = session.run(query, params or {})
+        return [r.data() for r in result]
 
-    def execute_query(self, query, parameters=None):
-        with self.driver.session() as session:
-            result = session.run(query, parameters or {})
-            return [record.data() for record in result]
-
-# Nutzen
-db = GameDB("bolt://localhost:7687", "neo4j", "password")
+# Beispiel
+rooms = run_query("MATCH (r:Room) RETURN r.name")
 ```
 
-### Beispiel-Queries in Python
-
+### Parametrisierte Queries
 ```python
-class GameDB:
-    # ... (init von oben)
-
-    def get_current_room(self, player_id):
-        query = """
-        MATCH (p:Player {id: $player_id})-[:LOCATED_IN]->(r:Room)
-        OPTIONAL MATCH (r)-[conn:CONNECTED_TO]->(neighbor:Room)
-        OPTIONAL MATCH (r)-[:CONTAINS]->(item:Item)
-        RETURN
-            r.id as id,
-            r.name as name,
-            r.description as description,
-            collect(DISTINCT {direction: conn.direction, room: neighbor.name}) as exits,
-            collect(DISTINCT item.name) as items
-        """
-        result = self.execute_query(query, {"player_id": player_id})
-        return result[0] if result else None
-
-    def move_player(self, player_id, direction):
-        query = """
-        MATCH (p:Player {id: $player_id})-[old:LOCATED_IN]->(current:Room)
-        MATCH (current)-[:CONNECTED_TO {direction: $direction}]->(next:Room)
-        DELETE old
-        CREATE (p)-[:LOCATED_IN]->(next)
-        RETURN next.id, next.name
-        """
-        result = self.execute_query(query, {
-            "player_id": player_id,
-            "direction": direction
-        })
-        return result[0] if result else None
-
-    def get_inventory(self, player_id):
-        query = """
-        MATCH (p:Player {id: $player_id})-[:CARRIES]->(i:Item)
-        RETURN collect(i.name) as items
-        """
-        result = self.execute_query(query, {"player_id": player_id})
-        return result[0]['items'] if result else []
+# Mit Parameters (sicherer!)
+query = """
+MATCH (p:Player {id: $player_id})-[:LOCATED_IN]->(r:Room)
+RETURN r.name
+"""
+result = run_query(query, {"player_id": "hero"})
 ```
 
 ---
 
-## 🛠️ Nützliche Commands
+## 🛠️ Debugging & Utils
 
-### Datenbank aufräumen
-
-```cypher
-// Alles löschen
-MATCH (n) DETACH DELETE n
-
-// Nur Test-Daten
-MATCH (n) WHERE n.test = true DETACH DELETE n
-
-// Nur bestimmte Labels
-MATCH (i:Item) DETACH DELETE i
-```
-
-### Debugging
-
+### Datenbank-Überblick
 ```cypher
 // Anzahl Nodes pro Label
 MATCH (n)
@@ -378,106 +165,59 @@ RETURN labels(n) as label, count(*) as count
 MATCH ()-[r]->()
 RETURN DISTINCT type(r)
 
-// Nodes ohne Relationships
-MATCH (n)
-WHERE NOT (n)--()
-RETURN n
-
-// Orphaned Items (nicht in Raum/Inventar)
-MATCH (i:Item)
-WHERE NOT (i)<-[:CONTAINS|CARRIES]-()
-RETURN i
+// Alles löschen (VORSICHT!)
+MATCH (n) DETACH DELETE n
 ```
 
 ### Performance
-
 ```cypher
-// Query-Plan anzeigen (Optimierung)
+// Query-Plan anzeigen
 EXPLAIN
-MATCH (r:Room {id: "thronsaal"})
+MATCH (r:Room {id: "start"})
 RETURN r
 
-// Query tatsächlich ausführen + Stats
+// Mit Execution-Stats
 PROFILE
-MATCH (r:Room {id: "thronsaal"})
+MATCH (r:Room {id: "start"})
 RETURN r
 ```
 
 ---
 
-## 📚 Wichtige Cypher-Patterns
+## 📚 Erweiterte Patterns
 
+### OPTIONAL MATCH
 ```cypher
-// MERGE = Upsert (Create or Match)
-MERGE (p:Player {id: "player1"})
-ON CREATE SET p.created_at = timestamp()
-ON MATCH SET p.last_login = timestamp()
-
-// OPTIONAL MATCH = Auch wenn nichts gefunden
+// Auch wenn keine Items vorhanden sind
 MATCH (r:Room)
 OPTIONAL MATCH (r)-[:CONTAINS]->(i:Item)
-RETURN r, i
-
-// collect() = Ergebnisse sammeln
-MATCH (r:Room)-[:CONTAINS]->(i:Item)
 RETURN r.name, collect(i.name) as items
+```
 
-// WITH = Intermediate Results
+### WITH - Intermediate Results
+```cypher
+// Filtern nach Aggregat
 MATCH (p:Player)-[:CARRIES]->(i:Item)
 WITH p, count(i) as item_count
 WHERE item_count > 5
 RETURN p.name, item_count
+```
 
-// CASE = Bedingungen
+### CASE - Bedingungen
+```cypher
 MATCH (p:Player)
 RETURN p.name,
   CASE
-    WHEN p.health > 80 THEN "healthy"
-    WHEN p.health > 30 THEN "wounded"
-    ELSE "critical"
+    WHEN p.health > 80 THEN "gesund"
+    WHEN p.health > 30 THEN "verletzt"
+    ELSE "kritisch"
   END as status
 ```
 
 ---
 
-## 🚀 Quick Start: 2-Raum Demo
+## 🔗 Ressourcen
 
-```cypher
-// 1. Schema
-CREATE CONSTRAINT room_id IF NOT EXISTS FOR (r:Room) REQUIRE r.id IS UNIQUE;
-CREATE CONSTRAINT player_id IF NOT EXISTS FOR (p:Player) REQUIRE p.id IS UNIQUE;
-
-// 2. Welt erstellen
-CREATE
-  (start:Room {
-    id: "start",
-    name: "Startpunkt",
-    description: "Du stehst an einem Kreuzweg."
-  }),
-  (forest:Room {
-    id: "forest",
-    name: "Dunkler Wald",
-    description: "Hohe Bäume umgeben dich."
-  }),
-  (player:Player {id: "hero", name: "Held", health: 100}),
-
-  (start)-[:CONNECTED_TO {direction: "norden"}]->(forest),
-  (forest)-[:CONNECTED_TO {direction: "süden"}]->(start),
-  (player)-[:LOCATED_IN]->(start);
-
-// 3. Testen
-MATCH (p:Player)-[:LOCATED_IN]->(r:Room)
-RETURN r.name as "Aktueller Raum";
-
-// 4. Bewegen
-MATCH (p:Player)-[old:LOCATED_IN]->(:Room)
-MATCH (current:Room)<-[:LOCATED_IN]-(p)
-MATCH (current)-[:CONNECTED_TO {direction: "norden"}]->(next:Room)
-DELETE old
-CREATE (p)-[:LOCATED_IN]->(next)
-RETURN next.name as "Neuer Raum";
-```
-
----
-
-**Pro-Tipp**: Browser UI (http://localhost:7474) hat Auto-Complete für Cypher! Nutze Ctrl+Space für Vorschläge.
+- **Neo4j Browser**: http://localhost:7474 (Auto-Complete mit Ctrl+Space)
+- **Offizielle Docs**: https://neo4j.com/docs/cypher-cheat-sheet/5/
+- **Cypher Manual**: https://neo4j.com/docs/cypher-manual/current/
