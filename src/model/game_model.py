@@ -13,7 +13,8 @@ class GameModel:
             auth=(
                 os.getenv('NEO4J_USER'),
                 os.getenv('NEO4J_PASSWORD')
-            )
+            ),
+            notifications_min_severity='OFF'
         )
 
     def close(self):
@@ -42,7 +43,7 @@ class GameModel:
         """
         return self._run_query(query)
 
-    def location_content(self, location):
+    def location_content(self):
         query = """
         MATCH (p:Player {id: 'player'})<-[:IST_IN]-(anything)
         RETURN anything.id, anything.name, anything.description
@@ -50,9 +51,10 @@ class GameModel:
 
         return self._run_query(query)
 
-    def location_connections(self, location):
+    def location_connections(self):
         query = """
-        MATCH (l:Location {id: $current_location})-[:ERREICHT]->(target:Location)
+        MATCH (p:Player {id: 'player'})-[:IST_IN]->(location:Location)
+        MATCH (location)-[:ERREICHT]->(target:Location)
         RETURN target.id, target.name, target.description
         """
 
@@ -60,7 +62,7 @@ class GameModel:
 
     def player_inventory(self):
         query = """
-        MATCH (p:Player {id: 'player_no1'})-[:TRÄGT]->(i:Item)
+        MATCH (p:Player {id: 'player'})-[:TRÄGT]->(i:Item)
         RETURN i.name
         """
 
@@ -68,7 +70,7 @@ class GameModel:
 
     def move_player(self, to_location):
         query = """
-        MATCH (p:Player {id: 'player_no1'})-[old:IST_IN]->(current:Location)
+        MATCH (p:Player {id: 'player'})-[old:IST_IN]->(current:Location)
         MATCH (current)-[:ERREICHT]->(target:Location {id: $target_location})
         DELETE old
         CREATE (p)-[:IST_IN]->(target)
@@ -79,10 +81,10 @@ class GameModel:
 
     def take_item(self, item):
         query = """
-        MATCH (p:Player {id: 'player_no1'})-[:IST_IN]->(loc:Location)
+        MATCH (p:Player {id: 'player'})-[:IST_IN]->(loc:Location)
         MATCH (i:Item {id: $item})-[old:IST_IN]->(loc)
         DELETE old
-        CREATE (p)-[:TRÄGT]->(item)
+        CREATE (p)-[:TRÄGT]->(i)
         RETURN i.name, loc.name
         """
 

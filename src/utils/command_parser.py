@@ -1,5 +1,3 @@
-
-
 class CommandParser:
     
     def parse(self, input_text):
@@ -7,14 +5,14 @@ class CommandParser:
         Parst einen Textinput
         
         Returns:
-            dict: {'action': str, 'target': list, 'raw': str}
+            dict: {'action': str, 'targets': list, 'raw': str}
         """
-        if not input_text:
-            return {'action': None, 'target': None, 'raw': input_text}
+        if not input_text or not input_text.strip():
+            return {'action': None, 'targets': [], 'raw': input_text}
         
         words = input_text.lower().strip().split()
 
         action = words[0]
-        target = words[1]
+        targets = words[1:]
 
-        return {'action': action, 'targets': target, 'raw': input_text}
+        return {'action': action, 'targets': targets, 'raw': input_text}

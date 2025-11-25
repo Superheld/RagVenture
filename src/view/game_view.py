@@ -18,7 +18,7 @@ class GameView:
         ))
 
     def get_command(self):
-        return Prompt.ask('what?')
+        return Prompt.ask('What?')
 
-    def answer(self, prompt):
+    def show_message(self, prompt):
         self.console.print(f'Antwort: {prompt}')
