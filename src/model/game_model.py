@@ -35,18 +35,59 @@ class GameModel:
             result = session.run(query, params or {})
             return [record.data() for record in result]
 
-    def current_location():
-        pass
+    def current_location(self):
+        query = """
+        MATCH (p:Player {id: 'player'})-[:IST_IN]->(location:Location)
+        RETURN location.id, location.name, location.description
+        """
+        return self._run_query(query)
 
-    def current_inventory():
-        pass
+    def location_content(self, location):
+        query = """
+        MATCH (p:Player {id: 'player'})<-[:IST_IN]-(anything)
+        RETURN anything.id, anything.name, anything.description
+        """
 
-    def move_player():
-        pass
+        return self._run_query(query)
 
-    def take_item():
-        pass
-    
-    def use_item():
+    def location_connections(self, location):
+        query = """
+        MATCH (l:Location {id: $current_location})-[:ERREICHT]->(target:Location)
+        RETURN target.id, target.name, target.description
+        """
+
+        return self._run_query(query)
+
+    def player_inventory(self):
+        query = """
+        MATCH (p:Player {id: 'player_no1'})-[:TRÄGT]->(i:Item)
+        RETURN i.name
+        """
+
+        return self._run_query(query)
+
+    def move_player(self, to_location):
+        query = """
+        MATCH (p:Player {id: 'player_no1'})-[old:IST_IN]->(current:Location)
+        MATCH (current)-[:ERREICHT]->(target:Location {id: $target_location})
+        DELETE old
+        CREATE (p)-[:IST_IN]->(target)
+        RETURN target.id, target.name, target.description
+        """
+
+        return self._run_query(query)
+
+    def take_item(self, item):
+        query = """
+        MATCH (p:Player {id: 'player_no1'})-[:IST_IN]->(loc:Location)
+        MATCH (i:Item {id: $item})-[old:IST_IN]->(loc)
+        DELETE old
+        CREATE (p)-[:TRÄGT]->(item)
+        RETURN i.name, loc.name
+        """
+
+        return self._run_query(query)
+
+    def use_item(self, item, target):
         pass
 
