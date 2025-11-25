@@ -124,16 +124,42 @@ MATCH (n) DETACH DELETE n
 ## 🗂️ Projektstruktur
 
 ```
-textadventure/
+RagVenture/
 ├── src/
-│   ├── controllers/
-│   ├── models/
-│   ├── views/
-│   └── utils/
-├── data/
+│   ├── controller/
+│   │   └── game_controller.py    # MVC Controller mit Command Processing
+│   ├── model/
+│   │   └── game_model.py         # Neo4j Datenbankoperationen
+│   ├── view/
+│   │   └── game_view.py          # Rich Terminal UI
+│   ├── utils/
+│   │   └── command_parser.py     # Text Command Parser
+│   └── main.py                   # Entry Point
 ├── notebooks/
+│   ├── 01-neo4j_dbsetup.ipynb    # DB Schema & Spielwelt Setup
+│   └── 02-neo4j_commands.ipynb   # Command Testing
+├── data/
 ├── docs/
+└── .env                          # Neo4j Credentials (nicht committen!)
 ```
+
+## 🎮 Spiel starten
+
+```bash
+# Virtual Environment aktivieren
+source venv/bin/activate  # Linux/Mac
+# oder
+venv\Scripts\activate     # Windows
+
+# Spiel starten
+python src/main.py
+```
+
+**Verfügbare Befehle:**
+- `show location` - Zeigt aktuellen Ort
+- `show directions` - Zeigt erreichbare Orte
+- `show inventory` - Zeigt Inventar
+- `quit` - Spiel beenden
 
 ---
 
@@ -148,10 +174,13 @@ textadventure/
 - [x] Constraints & Indexes erstellen
 - [x] Basis-Spielwelt aufbauen (3 Locations, Items, NPCs)
 - [x] Relationships definieren (IST_IN, ERREICHT)
-- [ ] Basis-Datenbankoperationen in Python (create, read für Räume und Player)
-- [ ] Spieler-Bewegung zwischen 2 Räumen funktioniert
-- [ ] Rich UI Prototyp mit 3-Panel-Layout
-- [ ] Parser: Grundstruktur + Bewegungsbefehle
+- [x] Basis-Datenbankoperationen in Python (create, read für Räume und Player)
+- [x] MVC-Architektur aufgebaut (Model, View, Controller)
+- [x] Parser: Grundstruktur + Command-Verarbeitung
+- [x] Rich UI Basis mit Welcome Screen
+- [x] Neo4j Warnings unterdrückt (notifications_min_severity='OFF')
+- [ ] Spieler-Bewegung zwischen Räumen implementieren
+- [ ] Items aufnehmen/ablegen funktioniert
 - [ ] Story-Konzept ausarbeiten
 
 **Skills:** MVC Pattern, Game Loop Design, Neo4j Graph-Modellierung, Docker, Rich Library, State Management

@@ -1,11 +1,14 @@
 
 from view.game_view import GameView
-# from model.game_model import GameModel
+from model.game_model import GameModel
+from utils.command_parser import CommandParser
 
 class GameController:
 
     def __init__(self):
         self.view = GameView()
+        self.model = GameModel()
+        self.parser = CommandParser()
         self.running = False
 
     def run_game(self):
@@ -17,7 +20,36 @@ class GameController:
             self.process_command(command)
     
     def process_command(self, command):
-        if command == 'quit':
+
+        parsed = self.parser.parse(command)
+
+        action = parsed['action']
+        targets = parsed['targets']
+
+        if action == 'quit':
+
             self.running = False
+            self.view.show_message('Tschüss!')
+
+        elif action == 'show':
+
+            if not targets:
+                self.view.show_message('Was möchtest Du sehen ("show ...)"?')
+                return
+            
+            target = targets[0]
+
+            if target == 'inventory':
+                result = self.model.player_inventory()
+            elif target == 'location':
+                result = self.model.current_location()
+            elif target == 'directions':
+                result = self.model.location_connections()
+            else:
+                self.view.show_message(f"Was ist {target}?")
+                return
+
+            self.view.show_message(result)
+        
         else:
-            self.view.answer(command)
+            self.view.show_message(f"Befehlt {action} nicht erkannt. Verwende 'show ...', 'visit ...', 'quit'")
