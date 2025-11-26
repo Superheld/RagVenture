@@ -14,7 +14,7 @@ class GameModel:
                 os.getenv('NEO4J_USER'),
                 os.getenv('NEO4J_PASSWORD')
             ),
-            notifications_min_severity='OFF'
+            # notifications_min_severity='OFF'
         )
 
     def close(self):
@@ -97,6 +97,18 @@ class GameModel:
         MATCH (i:Item {id: $item})-[old:IST_IN]->(loc)
         DELETE old
         CREATE (p)-[:TRÄGT]->(i)
+        RETURN i.name, loc.name
+        """
+
+        params = {'item': item}
+        return self._run_query(query, params=params)
+
+    def drop_item(self, item):
+        query = """
+        MATCH (p:Player {id: 'player'})-[old:TRÄGT]->(i:Item {id: $item})
+        MATCH (p)-[:IST_IN]->(loc:Location)
+        DELETE old
+        CREATE (i)-[:IST_IN]->(loc)
         RETURN i.name, loc.name
         """
 

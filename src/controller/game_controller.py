@@ -36,7 +36,7 @@ class GameController:
             if not targets:
                 self.view.show_message('Was möchtest Du sehen ("show ...)"?')
                 return
-            
+
             target = targets[0]
 
             if target == 'inventory':
@@ -45,11 +45,13 @@ class GameController:
                 result = self.model.current_location()
             elif target == 'directions':
                 result = self.model.location_connections()
+            elif target == 'content':
+                result = self.model.location_content()
             else:
                 self.view.show_message(f"Was ist {target}?")
                 return
 
-            self.view.show_message(result)
+            self.view.show_list('Hier gibts: ', result)
         
         elif action == 'visit':
             if not targets:
@@ -75,10 +77,23 @@ class GameController:
                 return
 
             else:
-                result = self.model.take_item(targets)
+                result = self.model.take_item(targets[0])
                 
                 if result:
                     self.view.show_message(f'Du trägst jetzt {result[0]['i.name']}')
+                    return
+
+        elif action == 'drop':
+            if not targets:
+                result = self.model.player_inventory()
+                self.view.show_list("Inventory: ", result)
+                return
+
+            else:
+                result = self.model.drop_item(targets[0])
+                
+                if result:
+                    self.view.show_message(f'Du hast {result[0]['i.name']} abgelegt.')
                     return
 
         else:

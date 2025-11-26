@@ -179,7 +179,7 @@ python src/main.py
 - [x] Rich UI Basis mit Welcome Screen
 - [x] Neo4j Warnings unterdrückt (notifications_min_severity='OFF')
 - [X] Spieler-Bewegung zwischen Räumen implementieren
-- [ ] Items aufnehmen/ablegen funktioniert
+- [X] Items aufnehmen/ablegen funktioniert
 - [ ] Story-Konzept ausarbeiten
 
 **Skills:** MVC Pattern, Game Loop Design, Neo4j Graph-Modellierung, Docker, Rich Library, State Management
