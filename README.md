@@ -72,6 +72,10 @@ source venv/bin/activate
 
 # Dependencies installieren
 pip install -r requirements.txt
+
+# spaCy Sprachmodelle herunterladen
+python -m spacy download de_core_news_lg      # Großes klassisches Model (560MB)
+python -m spacy download de_dep_news_trf       # Transformer-basiert (500MB)
 ```
 
 **`requirements.txt`:**
@@ -80,7 +84,17 @@ rich>=13.0.0
 neo4j>=5.0.0
 python-dotenv>=1.0.0
 jupyter>=1.0.0
+sentence-transformers>=3.0.0
+spacy>=3.8.0
+
+# spaCy Models (install separately):
+# python -m spacy download de_core_news_lg
+# python -m spacy download de_dep_news_trf
 ```
+
+**Hinweis:** Die spaCy Models werden separat heruntergeladen und können je nach Bedarf gewählt werden:
+- `de_core_news_lg` - CNN-basiert, schnell, ~560MB
+- `de_dep_news_trf` - Transformer-basiert (BERT), beste Genauigkeit, ~500MB
 
 ### 4. Environment Variables konfigurieren
 
