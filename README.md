@@ -121,8 +121,9 @@ jupyter notebook
 **Was das Notebook macht:**
 - Erstellt Constraints für eindeutige IDs (Location, Item, NPC, Player)
 - Erstellt Performance-Indexes
-- Generiert die Basis-Spielwelt (3 Locations, NPCs, Items)
+- Generiert die Spielwelt (4 Locations, 8 Items, 3 NPCs)
 - Verknüpft alles mit Relationships
+- Erstellt Embeddings für alle Entities (name + description)
 
 **Bei Problemen / Neustart:**
 ```python
@@ -150,7 +151,8 @@ RagVenture/
 │   └── main.py                   # Entry Point
 ├── notebooks/
 │   ├── 01-neo4j_dbsetup.ipynb    # DB Schema & Spielwelt Setup
-│   └── 02-neo4j_commands.ipynb   # Command Testing
+│   ├── 02-neo4j_commands.ipynb   # Command Testing
+│   └── 03-smart-parser.ipynb     # NLP Parser mit spaCy + Sentence Transformers
 ├── data/
 ├── docs/
 └── .env                          # Neo4j Credentials (nicht committen!)
@@ -172,6 +174,10 @@ python src/main.py
 - `show location` - Zeigt aktuellen Ort
 - `show directions` - Zeigt erreichbare Orte
 - `show inventory` - Zeigt Inventar
+- `show content` - Zeigt Items & NPCs am aktuellen Ort
+- `visit <location>` - Bewege dich zu einem Ort
+- `take <item>` - Nimm Item auf
+- `drop <item>` - Lege Item ab
 - `quit` - Spiel beenden
 
 ---
@@ -179,44 +185,65 @@ python src/main.py
 
 ## 🗺️ Roadmap - Plus Extrafeaturs :D
 
-### Phase 1: MVP Foundation (Woche 1)
+### Phase 1: MVP Foundation ✅ ABGESCHLOSSEN
 **Lernziele:** Game Development Fundamentals, MVC-Architektur, Graph-Datenbanken, TUI-Entwicklung
 
 - [x] Neo4j Docker-Container aufsetzen
 - [x] Schema-Design implementieren (Location, Item, NPC, Player Nodes)
 - [x] Constraints & Indexes erstellen
-- [x] Basis-Spielwelt aufbauen (3 Locations, Items, NPCs)
-- [x] Relationships definieren (IST_IN, ERREICHT)
-- [x] Basis-Datenbankoperationen in Python (create, read für Räume und Player)
+- [x] Spielwelt aufbauen (4 Locations, 8 Items, 3 NPCs)
+- [x] Relationships definieren (IST_IN, ERREICHT, TRÄGT)
+- [x] Basis-Datenbankoperationen in Python
 - [x] MVC-Architektur aufgebaut (Model, View, Controller)
 - [x] Parser: Grundstruktur + Command-Verarbeitung
 - [x] Rich UI Basis mit Welcome Screen
-- [x] Neo4j Warnings unterdrückt (notifications_min_severity='OFF')
-- [X] Spieler-Bewegung zwischen Räumen implementieren
-- [X] Items aufnehmen/ablegen funktioniert
-- [ ] Story-Konzept ausarbeiten
+- [x] Spieler-Bewegung zwischen Räumen
+- [x] Items aufnehmen/ablegen funktioniert
+- [x] Embeddings für alle Entities (SentenceTransformers)
 
 **Skills:** MVC Pattern, Game Loop Design, Neo4j Graph-Modellierung, Docker, Rich Library, State Management
 
-**Milestone**: Spieler kann sich im Terminal zwischen Räumen bewegen
+**Milestone**: ✅ Funktionierendes Text-Adventure mit Bewegung und Item-Interaktion
 
 ---
 
-### Phase 2: Core Mechanics (Woche 2)
+### Phase 1.5: Smart Parser 🚧 IN ARBEIT
+**Lernziele:** Natural Language Processing, spaCy, Embeddings, Semantic Matching
+
+- [x] spaCy Integration (de_dep_news_trf)
+- [x] SentenceTransformer Setup (paraphrase-multilingual-MiniLM-L12-v2)
+- [x] Verb-Extraktion & Dependency Parsing
+- [x] Command-Matching mit Embeddings (6 Commands: take, drop, go, examine, read, use)
+- [x] Test-Suite mit 40+ Sätzen (basic, trennbar, komplex, präpositionen, synonyme, schwierig, edge cases)
+- [x] Accuracy-Analyse (~77% durchschnittlich)
+- [ ] **OFFEN: Object-Matching mit DB-Embeddings** (aktuell nur Verb→Command)
+- [ ] **OFFEN: Fuzzy-Matching für Entity-Namen**
+- [ ] **OFFEN: Integration in game_controller.py**
+- [ ] **OFFEN: Item-Relationship-Design vereinfachen** (aktuell zu spezifisch: KANN_ANZÜNDEN, etc.)
+
+**Offene Architektur-Fragen:**
+- Wie generisch sollen Item-Relationships sein? (NUTZBAR_MIT vs. KANN_ANZÜNDEN)
+- Object-Matching: Nur Embeddings oder auch Rules?
+- Parser-Output-Format für Controller
+
+**Skills:** spaCy NLP, Sentence Embeddings, Semantic Similarity, Dependency Parsing, Test-Driven Development
+
+**Milestone**: Parser versteht natürliche deutsche Sätze und mappt zu Commands
+
+---
+
+### Phase 2: Core Mechanics (verschoben)
 **Lernziele:** Relationship-Modellierung, Command Pattern, Data Loading, UI/UX Design
 
-- [ ] Item-System in DB (CONTAINS, CARRIES Relationships)
-- [ ] Item aufnehmen/ablegen funktioniert
 - [ ] NPC-Dialoge (statischer Text aus DB)
-- [ ] Quest-System (WANTS/GIVES Relationships)
-- [ ] Parser: Alle Befehle (take, talk, look, inventory, help, quit)
-- [ ] Story-Loader: JSON → Neo4j
-- [ ] Komplette Story-Datei schreiben (Räume, Items, NPCs, Dialoge)
-- [ ] UI: Farbcodierung und alle Panels
+- [ ] Quest-System (Relationships & State-Tracking)
+- [ ] Story-Konzept ausarbeiten
+- [ ] UI: Farbcodierung und alle Panels erweitern
+- [ ] Story-Loader: JSON → Neo4j (optional)
 
 **Skills:** Graph Relationships, Command Parser Design, JSON Data Loading, Cypher Queries, Rich Advanced Features
 
-**Milestone**: Alle Einzelkomponenten funktionieren isoliert
+**Milestone**: Interaktive NPCs und Quest-System
 
 ---
 
@@ -237,20 +264,19 @@ python src/main.py
 
 ---
 
-### Phase 4: Intelligent Parser & Understanding
-**Lernziele:** Natural Language Processing, Embeddings, Intent Recognition, MCP Architecture
+### Phase 4: Advanced Parser Features (teilweise in Phase 1.5)
+**Lernziele:** Advanced NLP, Disambiguation, Complex Commands
 
-- [ ] **Natural Language Commands**: "Gib dem Wächter das Schwert" statt Keyword-Matching
-- [ ] Embeddings-basierte Intent-Erkennung (sentence-transformers)
+- [x] Embeddings-basierte Intent-Erkennung (bereits in Phase 1.5)
+- [x] Synonym-Handling (bereits in Phase 1.5)
 - [ ] Fuzzy-Matching für Objekt/NPC-Namen
-- [ ] **LLM-Parser**: Komplexe Mehrfach-Befehle verstehen
+- [ ] **LLM-Parser**: Komplexe Mehrfach-Befehle verstehen ("nimm X und gib Y")
 - [ ] **MCP Integration evaluieren**: Parser als Model Context Protocol
 - [ ] Disambiguation: "Welchen Schlüssel meinst du?" bei Mehrdeutigkeit
-- [ ] Synonym-Handling (gehen/laufen/rennen)
 
 **Skills:** Semantic Search, Vector Embeddings, Intent Classification, Model Context Protocol, Fuzzy String Matching
 
-**Milestone**: Spiel versteht natürliche Sprache
+**Milestone**: Parser versteht komplexe Multi-Befehle
 
 ---
 
@@ -348,6 +374,36 @@ python src/main.py
 
 ---
 
-**Version:** MVP v1.0  
-**Letzte Aktualisierung:** November 2025  
+## 🎯 Aktueller Stand & Nächste Schritte
+
+**Aktueller Branch:** `smart-parser`
+
+**Was funktioniert:**
+- ✅ MVC-Architektur mit Neo4j Backend
+- ✅ Spieler-Bewegung, Item-Interaktion
+- ✅ Embeddings für alle Entities in DB
+- ✅ Smart Parser (Verb→Command mit 77% Accuracy)
+- ✅ Umfangreiche Test-Suite für Parser
+
+**In Arbeit:**
+- 🚧 Object-Matching mit DB-Embeddings
+- 🚧 Integration Smart Parser in Game Controller
+- 🚧 Item-Relationship-Design überarbeiten
+
+**Nächste TODOs:**
+1. Item-Relationships vereinfachen (zu spezifisch: KANN_ANZÜNDEN → generischer)
+2. Object-Matching implementieren (spaCy Objects → DB Entity Embeddings)
+3. Parser in Controller integrieren
+4. Fackel-Quest funktionsfähig machen (anzünden, Finsterwald beleuchten)
+5. README weiter aktualisieren mit aktuellen Architektur-Entscheidungen
+
+**Offene Architektur-Fragen:**
+- Item-Relationships: Wie generisch? (NUTZBAR_MIT vs. spezifische Actions)
+- Object-Matching: Nur Embeddings oder Hybrid mit Rules?
+- State-Management für Items (is_lit, etc.) - Properties vs. Relationships?
+
+---
+
+**Version:** v0.5 (Smart Parser Development)
+**Letzte Aktualisierung:** 30. November 2025
 **Status:** In Entwicklung 🚧
