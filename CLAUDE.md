@@ -58,11 +58,37 @@ python debug_db.py
 
 ## Architecture
 
-### MVC Pattern
-- **Model** (`src/model/game_model.py`): Neo4j database operations, all Cypher queries
-- **View** (`src/view/game_view.py`): Rich terminal UI, display logic only
-- **Controller** (`src/controller/game_controller.py`): Game loop, command routing, orchestration
-- **Parser** (`src/utils/command_parser.py`): Simple text parser (returns `{action, targets, raw}`)
+### MVC Pattern (UPDATED - Smart Parser Architecture)
+
+**Important:** Die Architektur wurde erweitert für den Smart Parser. Siehe `docs/smart_parser_architecture.md` für Details.
+
+- **Parser** (`src/utils/command_parser.py` → zukünftig `SmartParser`):
+  - ✅ NLP mit SpaCy (Verb-Extraktion, Objekt-Extraktion)
+  - ✅ Command-Mapping via Sentence Transformers (Embeddings)
+  - ✅ Synonym-Handling ("nimm", "hol", "greif" → `'take'`)
+  - ❌ **KEIN DB-Zugriff** (MVC-Prinzip!)
+  - Output: `{'command': str, 'object_text': str, 'adjectives': list, 'confidence': float, 'raw': str}`
+
+- **Controller** (`src/controller/game_controller.py`):
+  - ✅ Parser → Model → View koordinieren
+  - ✅ **Entity-Matching** (Text → DB-ID via Similarity-Berechnung mit gecachten Entities)
+  - ✅ Entscheidungen treffen (Confidence-Thresholds, Nachfrage-Dialoge)
+  - ✅ Ablaufsteuerung
+  - ❌ **KEINE Business-Logik** (gehört ins Model)
+
+- **Model** (`src/model/game_model.py`):
+  - ✅ Neo4j database operations
+  - ✅ **Gibt komplette Listen zurück** (nicht einzelne Matches!)
+  - ✅ Business-Validierung (ist Item nehmbar? ist Location erreichbar?)
+  - ✅ Aktionen ausführen (take_item, drop_item, move_player)
+  - ❌ **KEIN Entity-Matching** (wandert in Controller)
+
+- **View** (`src/view/game_view.py`):
+  - ✅ Rich terminal UI, display logic only
+  - (Zukünftig: Dialog-Anzeige für Ja/Nein, Multiple Choice)
+
+**Merksatz:**
+> **Parser versteht Sprache. Controller orchestriert. Model verwaltet Daten und Regeln.**
 
 ### Key Design Decisions
 
@@ -78,12 +104,36 @@ python debug_db.py
 - Use proper relationship directions: `(a)-[:REL]->(b)` matters
 - Filter by node labels in WHERE when needed: `WHERE 'Item' IN labels(entity)`
 
-**Command Processing Flow:**
+**Command Processing Flow (NEUE ARCHITEKTUR):**
 ```
-User Input → Parser → Controller → Model → Neo4j → Model → Controller → View → Terminal
+User Input
+    ↓
+Parser (NLP + Command-Mapping, KEIN DB!)
+    ↓ {'command': 'take', 'object_text': 'Schlüssel', 'adjectives': ['goldenen'], ...}
+Controller (Entity-Matching mit gecachten Items)
+    ↓ Similarity-Berechnung → {'item_id': 'schluessel', 'similarity': 0.89}
+Controller (Entscheidung: Confidence OK?)
+    ↓
+Model (Aktion ausführen: take_item('schluessel'))
+    ↓
+Controller
+    ↓
+View → Terminal
 ```
 
-**Parser Output Format:**
+**Parser Output Format (SMART PARSER - NEUES FORMAT):**
+```python
+{
+    'command': str,          # 'take', 'drop', 'visit', 'examine', 'read', 'use', 'show', 'quit'
+    'confidence': float,     # 0.0 - 1.0 (Verb-Matching Confidence)
+    'object_text': str,      # Objekt-Name aus NLP (z.B. "Schlüssel", "Taverne")
+    'adjectives': list,      # Liste von Adjektiven (z.B. ["goldenen", "alten"])
+    'raw': str,              # Original-Input für Logging/Debugging
+    'verb_lemma': str        # Erkanntes Verb-Lemma (z.B. "nehmen") - für Debugging
+}
+```
+
+**Alte Parser Output Format (Einfacher Parser - noch aktiv):**
 ```python
 {
     'action': str,      # First word, lowercased
@@ -143,57 +193,134 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### Common Patterns
 
-**Adding a new Model method with Neo4j query:**
+**Adding a new Model method (gibt KOMPLETTE LISTE zurück):**
 ```python
-def method_name(self, param):
+def get_items_at_location(self, location_id=None):
+    """
+    Gibt ALLE Items an der Location zurück (mit Embeddings!)
+    Model macht KEIN Matching - nur Daten liefern
+    """
     query = """
     MATCH (p:Player {id: 'player'})-[:IST_IN]->(loc:Location)
-    MATCH (entity)-[:RELATIONSHIP]->(target)
-    WHERE conditions
-    RETURN entity.property
+    MATCH (i:Item)-[:IST_IN]->(loc)
+    RETURN i.id as id, i.name as name,
+           i.description as description,
+           i.name_embedding as embedding
     """
-    params = {'param': param}
-    return self._run_query(query, params=params)
+    return self._run_query(query)
 ```
 
-**Adding a new Controller command:**
+**Adding a new Controller command (NEUE ARCHITEKTUR):**
 ```python
-elif action == 'command':
-    if not targets:
-        # Show help/list
-        result = self.model.list_method()
-        self.view.show_list("Title", result)
+elif parsed['command'] == 'take':
+    # 1. Controller prüft Parser-Confidence
+    if parsed['confidence'] < 0.5:
+        self.view.show_message("Ich habe dich nicht verstanden.")
         return
-    else:
-        # Execute command
-        result = self.model.action_method(targets[0])
-        if result:
-            self.view.show_message(f'Success message')
+
+    # 2. Controller holt Items (gecacht oder vom Model)
+    items = self.current_location_cache['items']
+    # oder: items = self.model.get_items_at_location()
+
+    # 3. Controller macht Entity-Matching (Similarity-Berechnung)
+    match = self._find_best_match(
+        parsed['object_text'],
+        parsed['adjectives'],
+        candidates=items
+    )
+
+    # 4. Controller entscheidet basierend auf Confidence
+    if match is None:
+        self.view.show_message(f"Ich sehe hier kein {parsed['object_text']}.")
+        return
+
+    if match['similarity'] < 0.5:
+        # Zu unsicher → Nachfragen
+        self.view.show_message(f"Meinst du {match['name']}?")
+        # TODO: Dialog-System
+        return
+
+    # 5. Aktion ausführen via Model
+    result = self.model.take_item(match['item_id'])
+    if result:
+        self.view.show_message(f"Du nimmst {result['name']}.")
+```
+
+**Controller: Entity-Matching-Methode:**
+```python
+def _find_best_match(self, object_text, adjectives, candidates):
+    """
+    Findet bestes Match via Similarity (im Controller, nicht im Model!)
+
+    Args:
+        object_text: "Schlüssel" (vom Parser)
+        adjectives: ["goldenen"] (vom Parser)
+        candidates: Liste von Items/Locations (gecacht oder vom Model)
+
+    Returns:
+        {'item_id': 'schluessel', 'name': '...', 'similarity': 0.89} oder None
+    """
+    search_text = ' '.join(adjectives + [object_text])
+    search_embedding = self.sentence_model.encode(search_text)
+
+    best_match = None
+    best_similarity = 0.0
+
+    for item in candidates:
+        similarity = util.cos_sim(search_embedding, item['embedding'])[0][0].item()
+        if similarity > best_similarity:
+            best_similarity = similarity
+            best_match = {
+                'item_id': item['id'],
+                'name': item['name'],
+                'similarity': similarity
+            }
+
+    return best_match if best_similarity > 0.3 else None
 ```
 
 ### Known Gotchas
 
-1. **Parser returns `targets` as list** - Use `targets[0]` when passing to Model methods expecting a string
-2. **Python dict vs set syntax** - `{'key': value}` not `{'key', value}`
-3. **Relationship directions matter** - `(a)-[:REL]->(b)` is different from `(a)<-[:REL]-(b)`
-4. **Cache issues** - Restart `python src/main.py` after code changes (Python caches modules)
-5. **Label filtering** - Use `:Item` in MATCH or `WHERE 'Item' IN labels(entity)` to filter node types
+1. **Smart Parser Output** - Neues Format! `object_text` ist String, `adjectives` ist Liste. Alte Parser: `targets[0]`
+2. **Entity-Matching gehört in Controller** - Model liefert KOMPLETTE Listen, Controller matched
+3. **Parser hat KEINEN DB-Zugriff** - MVC-Prinzip: Parser = NLP, Model = Daten
+4. **Python dict vs set syntax** - `{'key': value}` not `{'key', value}`
+5. **Relationship directions matter** - `(a)-[:REL]->(b)` is different from `(a)<-[:REL]-(b)`
+6. **Cache issues** - Restart `python src/main.py` after code changes (Python caches modules)
+7. **Label filtering** - Use `:Item` in MATCH or `WHERE 'Item' IN labels(entity)` to filter node types
+8. **Embeddings in DB** - Items/Locations haben `name_embedding` Property (bereits vorhanden!)
 
 ## Documentation
 
+- `docs/smart_parser_architecture.md` - **Smart Parser Architektur (MVC-konform, Parser ohne DB-Zugriff)**
+- `docs/architecture_notes_dialog_caching.md` - **Konzepte: Dialog-System & Caching-Strategie**
+- `docs/architecture_idea.md` - MVC-Architektur mit aktuellen Verantwortlichkeiten
 - `docs/neo4j_cheatsheet.md` - Comprehensive Cypher WHERE clause reference
-- `docs/architecture_idea.md` - Original architecture vision (for reference, may differ from current state)
 - `docs/neo4j_docker.md` - Docker setup details
 - `README.md` - Setup instructions and roadmap
 - `notebooks/01-neo4j_dbsetup.ipynb` - Database initialization (run this first!)
 - `notebooks/02-neo4j_commands.ipynb` - Query testing and experimentation
+- `notebooks/03-smart-parser.ipynb` - **Smart Parser Experimente und Tests (77% Accuracy)**
 
 ## Future Roadmap Context
 
 The codebase is designed to eventually support:
-- LLM-based narrator (Ollama integration)
-- NPC personalities with individual prompts
-- Natural language parser (replacing current keyword parser)
-- Command Pattern refactoring (currently flat if/elif in Controller)
+- **Smart Parser Integration** (Phase 1.5 - IN ARBEIT)
+  - Parser-Klasse mit SpaCy + Sentence Transformers implementieren
+  - Controller umbauen (Entity-Matching, Caching)
+  - Model vereinfachen (komplette Listen statt Matching)
+- **Dialog-System** (Phase 1.5+)
+  - Ja/Nein-Bestätigungen bei niedrigem Confidence
+  - Multiple-Choice bei mehreren ähnlichen Items
+  - State-Management im Controller
+- **LLM-based narrator** (Phase 3 - Ollama integration)
+- **NPC personalities** with individual prompts
+- **Command Pattern refactoring** (currently flat if/elif in Controller)
 
 When making changes, keep extensibility in mind but don't over-engineer for future phases.
+
+---
+
+**Letzte Aktualisierung:** 4. Dezember 2024
+**Aktueller Branch:** `smart-parser`
+**Status:** Phase 1.5 - Smart Parser Development (Architektur definiert, Implementierung steht an)
