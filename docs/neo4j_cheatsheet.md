@@ -268,6 +268,112 @@ RETURN r
 
 ---
 
+## 🔍 Vector Search & Embeddings
+
+### Vector Indexes erstellen
+```cypher
+// Vector-Index für Embeddings (Neo4j 5.x+)
+CREATE VECTOR INDEX item_name_index IF NOT EXISTS
+FOR (i:Item) ON i.name_emb
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 384,              // Größe des Embedding-Vektors
+  `vector.similarity_function`: 'cosine' // cosine, euclidean, oder dot-product
+}}
+
+// Weitere Beispiele
+CREATE VECTOR INDEX location_name_index IF NOT EXISTS
+FOR (l:Location) ON l.description_emb
+OPTIONS {indexConfig: {
+  `vector.dimensions`: 768,              // z.B. für größere Modelle
+  `vector.similarity_function`: 'euclidean'
+}}
+```
+
+### Vector Search durchführen
+```cypher
+// Top 5 ähnlichste Items finden
+CALL db.index.vector.queryNodes('item_name_index', 5, $embedding)
+YIELD node, score
+RETURN node.name, score
+ORDER BY score DESC
+
+// Mit Filter kombinieren
+CALL db.index.vector.queryNodes('item_name_index', 10, $embedding)
+YIELD node AS item, score
+WHERE item.price < 100
+RETURN item.name, score
+LIMIT 5
+```
+
+### Vector Search mit Context (Player-Location)
+```cypher
+// Nur Items am aktuellen Ort des Players finden
+MATCH (p:Player {id: 'player'})-[:IST_IN]->(loc:Location)
+
+CALL db.index.vector.queryNodes('item_name_index', 5, $object_embedding)
+YIELD node AS item, score
+
+// Nur Items die auch am Player-Ort sind
+MATCH (item)-[:IST_IN]->(loc)
+
+RETURN item.id, item.name, score, loc.name AS location
+ORDER BY score DESC
+LIMIT 1
+```
+
+### Praktische Beispiele
+```cypher
+// Erreichbare Locations finden
+MATCH (p:Player {id: 'player'})-[:IST_IN]->(current:Location)
+
+CALL db.index.vector.queryNodes('location_name_index', 5, $location_emb)
+YIELD node AS loc, score
+
+MATCH (current)-[:ERREICHT]->(loc)
+RETURN loc.id, loc.name, score
+ORDER BY score DESC
+LIMIT 3
+
+// Items im Inventar finden
+MATCH (p:Player {id: 'player'})-[:TRÄGT]->(item:Item)
+
+CALL db.index.vector.queryNodes('item_name_index', 5, $item_emb)
+YIELD node AS match_item, score
+
+WHERE item.id = match_item.id
+RETURN match_item.name, score
+```
+
+### Similarity Functions
+```cypher
+// Cosine Similarity (Standard für Sentence Embeddings)
+// Range: -1 bis 1, höher = ähnlicher
+`vector.similarity_function`: 'cosine'
+
+// Euclidean Distance (L2)
+// Range: 0 bis ∞, niedriger = ähnlicher
+`vector.similarity_function`: 'euclidean'
+
+// Dot Product
+// Range: unbegrenzt, höher = ähnlicher
+`vector.similarity_function`: 'dot-product'
+```
+
+### Vector Index verwalten
+```cypher
+// Alle Vector Indexes anzeigen
+SHOW INDEXES
+WHERE type = "VECTOR"
+
+// Index löschen
+DROP INDEX item_name_index IF EXISTS
+
+// Index-Status prüfen
+SHOW INDEX item_name_index
+```
+
+---
+
 ## 📚 Erweiterte Patterns
 
 ### OPTIONAL MATCH

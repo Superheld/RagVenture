@@ -2,3 +2,9 @@ rich>=13.0.0
 neo4j>=5.0.0
 python-dotenv>=1.0.0
 jupyter>=1.0.0
+sentence-transformers>=3.0.0
+spacy>=3.8.0
+
+# spaCy Models (install separately):
+# python -m spacy download de_core_news_lg
+# python -m spacy download de_dep_news_trf
