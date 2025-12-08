@@ -137,7 +137,45 @@ COMMAND_TEMPLATES = [
             "gehe vorsichtig in den wald",
             "können wir zum wald gehen",
             "kann ich zur taverne gehen",
-            "darf ich zum see gehen"
+            "darf ich zum see gehen",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "will da hin",
+            "will zur taverne",
+            "muss da hin",
+            "muss weg hier",
+            "geh ich mal hin",
+            "schau ich mal nach",
+            "mal gucken was da ist",
+            "lass mich rein",
+            "kann ich da rein",
+            "geht's da rein",
+            "wo geht's lang",
+            "wie komm ich da hin",
+
+            # Partikel (wie User wirklich spricht)
+            "geh mal wald",
+            "lauf halt taverne",
+            "komm doch mit",
+            "geh schon vor",
+
+            # Ein-Wort-Richtungen
+            "rein",
+            "raus",
+            "hoch",
+            "runter",
+            "weg",
+            "vor",
+            "zurück",
+            "rüber",
+            "weiter",
+
+            # Umgangssprache
+            "hau ab",
+            "zieh leine",
+            "mach dass du wegkommst",
+            "verschwinde",
+            "komm her"
         ],
         threshold=0.80
     ),
@@ -249,7 +287,41 @@ COMMAND_TEMPLATES = [
             "kann ich den schlüssel nehmen",
             "darf ich den schlüssel nehmen",
             "nimm alles mit",
-            "nimm nicht das schwert"
+            "nimm nicht das schwert",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "brauch ich",
+            "brauch den schlüssel",
+            "will ich haben",
+            "will das haben",
+            "gehört jetzt mir",
+            "ist jetzt meins",
+            "kommt mit",
+            "nehm ich mit",
+            "pack ich ein",
+            "kann ich das haben",
+            "darf ich das haben",
+            "gib mir das",
+            "gib her",
+            "her damit",
+
+            # Partikel
+            "nimm mal schlüssel",
+            "hol halt beutel",
+            "pack doch ein",
+            "nimm schon",
+
+            # Ein-Wort (kontextabhängig)
+            "nimm",
+            "her",
+            "mitnehmen",
+
+            # Umgangssprache
+            "krall dir schlüssel",
+            "schnapp dir das",
+            "tu einstecken",
+            "pack zusammen",
+            "raff das zeug auf"
         ],
         threshold=0.80
     ),
@@ -346,7 +418,37 @@ COMMAND_TEMPLATES = [
             "kann ich das schwert ablegen",
             "darf ich das ablegen",
             "wirf alles weg",
-            "leg nicht das schwert ab"
+            "leg nicht das schwert ab",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "brauch ich nicht",
+            "will ich nicht",
+            "weg damit",
+            "muss weg",
+            "kann weg",
+            "braucht kein mensch",
+            "zurücklassen",
+            "hier lassen",
+            "leg ich ab",
+            "lass ich hier",
+
+            # Partikel
+            "wirf mal weg",
+            "leg halt ab",
+            "lass doch liegen",
+            "schmeiß schon weg",
+
+            # Ein-Wort
+            "weg",
+            "ablegen",
+            "dalassen",
+
+            # Umgangssprache
+            "schaff weg",
+            "tu weg",
+            "schmeiß weg",
+            "hau weg",
+            "los werden"
         ],
         threshold=0.80
     ),
@@ -469,7 +571,37 @@ COMMAND_TEMPLATES = [
             "benutze schnell den hebel",
             "kann ich den schlüssel benutzen",
             "darf ich die truhe öffnen",
-            "öffne nicht die truhe"
+            "öffne nicht die truhe",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "versuch ich mal",
+            "probier ich aus",
+            "geht das auf",
+            "geht die truhe auf",
+            "kriegen wir das auf",
+            "bekomm ich das auf",
+            "funktioniert das",
+            "damit kann ich vielleicht",
+            "mach ich auf",
+            "will ich aufmachen",
+
+            # Partikel
+            "öffne mal truhe",
+            "mach halt auf",
+            "probier doch aus",
+            "versuch schon",
+
+            # Ein-Wort
+            "auf",
+            "aufmachen",
+            "benutzen",
+            "probieren",
+
+            # Umgangssprache
+            "krieg auf",
+            "mach auf damit",
+            "probiers",
+            "versuchen wir mal"
         ],
         threshold=0.80
     ),
@@ -590,7 +722,36 @@ COMMAND_TEMPLATES = [
             "kann ich die truhe untersuchen",
             "darf ich das untersuchen",
             "untersuche alles",
-            "untersuche nicht die truhe"
+            "untersuche nicht die truhe",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "was ist das",
+            "was ist das für ein ding",
+            "schau ich mir an",
+            "guck ich mir an",
+            "sieht interessant aus",
+            "was kann das",
+            "zeig mir das genauer",
+            "mal genauer ansehen",
+            "wie sieht das aus",
+            "näher betrachten",
+
+            # Partikel
+            "schau mal an",
+            "untersuche halt",
+            "guck doch genauer",
+            "sieh schon nach",
+
+            # Ein-Wort
+            "untersuchen",
+            "ansehen",
+            "genauer",
+
+            # Umgangssprache
+            "guck mal",
+            "was isn das",
+            "schau her",
+            "zeig mal"
         ],
         threshold=0.80
     ),
@@ -708,7 +869,32 @@ COMMAND_TEMPLATES = [
             "kann ich das buch lesen",
             "darf ich das lesen",
             "lies alles",
-            "lies nicht das buch"
+            "lies nicht das buch",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "was steht da",
+            "was steht da drin",
+            "mal lesen",
+            "lesen was da steht",
+            "steht da was wichtiges",
+            "kann ich lesen",
+            "gibt's da text",
+            "zeig mir den text",
+
+            # Partikel
+            "lies mal",
+            "lese halt",
+            "lies doch vor",
+            "studier schon",
+
+            # Ein-Wort
+            "lesen",
+            "vorlesen",
+
+            # Umgangssprache
+            "was stehtn da",
+            "guck was da steht",
+            "lesen was da is"
         ],
         threshold=0.80
     ),
@@ -819,7 +1005,36 @@ COMMAND_TEMPLATES = [
             "kann ich mit dem wirt sprechen",
             "darf ich mit ihm reden",
             "rede mit allen",
-            "sprich nicht mit dem wirt"
+            "sprich nicht mit dem wirt",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "hallo",
+            "hey",
+            "mal fragen",
+            "frag ich mal",
+            "vielleicht weiß der was",
+            "was sagt der",
+            "der weiß vielleicht was",
+            "mit dem reden",
+            "mal mit dem sprechen",
+
+            # Partikel
+            "sprich mal mit",
+            "frag halt",
+            "rede doch mit",
+            "quatsch schon",
+
+            # Ein-Wort
+            "hallo",
+            "sprechen",
+            "fragen",
+
+            # Umgangssprache
+            "hallo sagen",
+            "was willstn",
+            "erzähl mal",
+            "was weißt du",
+            "kannste mir helfen"
         ],
         threshold=0.80
     ),
@@ -927,7 +1142,35 @@ COMMAND_TEMPLATES = [
             "sieh dich aufmerksam um",
             "kann ich mich umschauen",
             "darf ich mich umsehen",
-            "schau dich überall um"
+            "schau dich überall um",
+
+            # Natürliche Intent-Formulierungen (kontextbewusst)
+            "wo bin ich",
+            "wo bin ich hier",
+            "was ist hier",
+            "was gibts hier",
+            "was ist hier so",
+            "überblick",
+            "mal umschauen",
+            "schau ich mich um",
+            "mal gucken wo ich bin",
+
+            # Partikel
+            "schau mal um",
+            "sieh halt um",
+            "guck doch um",
+            "späh schon aus",
+
+            # Ein-Wort
+            "umschauen",
+            "umsehen",
+            "überblick",
+
+            # Umgangssprache
+            "wo isn ich",
+            "was isn hier",
+            "mal schauen",
+            "guck mal hier"
         ],
         threshold=0.80
     )
