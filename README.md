@@ -170,15 +170,89 @@ venv\Scripts\activate     # Windows
 python src/main.py
 ```
 
-**Verfügbare Befehle:**
-- `show location` - Zeigt aktuellen Ort
-- `show directions` - Zeigt erreichbare Orte
-- `show inventory` - Zeigt Inventar
-- `show content` - Zeigt Items & NPCs am aktuellen Ort
-- `visit <location>` - Bewege dich zu einem Ort
-- `take <item>` - Nimm Item auf
-- `drop <item>` - Lege Item ab
-- `quit` - Spiel beenden
+## 🗣️ Natürliche Sprache mit dem Smart Parser
+
+Das Spiel versteht **natürliche deutsche Sätze** - du musst keine exakten Befehle kennen!
+
+### Beispiele für Bewegung (go):
+```
+geh zur Taverne
+lauf zum Marktplatz
+besuche die Schmiede
+renn in den Finsterwald
+spaziere zum Brunnen
+```
+
+### Beispiele für Items aufnehmen (take):
+```
+nimm den Schlüssel
+hol die Fackel
+greif nach dem Hammer
+schnapp dir den goldenen Esel
+sammel die Streichhölzer auf
+pack das Schwert ein
+```
+
+### Beispiele für Items ablegen (drop):
+```
+leg den Schlüssel ab
+wirf die Fackel weg
+stell den Hammer hin
+lass den Beutel fallen
+platziere das Schwert
+```
+
+### System-Befehle:
+- `quit` - Spiel beenden (hart-codiert, kein Parser)
+
+### 🎯 Wie der Parser funktioniert:
+
+Der **Smart Parser** nutzt spaCy und Sentence Embeddings um:
+1. **Verben zu extrahieren** (z.B. "schnapp" aus "schnapp dir den Kristall")
+2. **Commands zu matchen** via Similarity (77%+ Accuracy)
+3. **Objekte zu finden** (aktuell: Nomen im Satz, zukünftig: DB-Matching)
+
+**Unterstützte Commands:**
+- `go` - Bewegung (80+ Verben: gehen, laufen, rennen, marschieren, ...)
+- `take` - Aufnehmen (70+ Verben: nehmen, holen, packen, greifen, ...)
+- `drop` - Ablegen (40+ Verben: ablegen, wegwerfen, hinlegen, ...)
+- `use` - Benutzen (40+ Verben: benutzen, verwenden, öffnen, ...)
+- `examine` - Untersuchen (30+ Verben: untersuchen, betrachten, ...)
+- `read` - Lesen (20+ Verben: lesen, durchlesen, studieren, ...)
+- `talk` - Sprechen (15+ Verben: sprechen, reden, plaudern, ...)
+- `look` - Umschauen (20+ Verben: schauen, umsehen, gucken, ...)
+
+**Vollständige Command-Liste:** siehe `docs/commands.md`
+
+### 🖥️ Das Multi-Panel UI
+
+Das Spiel zeigt alle wichtigen Infos **gleichzeitig** an:
+
+```
+┌─────────────────────────────┬─────────────┐
+│ Location: Marktplatz        │ Inventar:   │
+│ Beschreibung...             │ • Fackel    │
+├─────────────────────────────┤ • Schlüssel │
+│ Items:                      │             │
+│ • Goldener Esel             │             │
+│ • Beutel mit Goldmünzen     │             │
+├─────────────────────────────┤             │
+│ Exits:                      │             │
+│ • Taverne                   │             │
+│ • Schmiede                  │             │
+└─────────────────────────────┴─────────────┘
+
+✓ Schlüssel aufgenommen
+
+What? > _
+```
+
+**Features:**
+- **Location-Panel:** Name, Beschreibung (immer sichtbar)
+- **Items-Panel:** Gegenstände am aktuellen Ort (Live-Update)
+- **Exits-Panel:** Erreichbare Orte (Live-Update)
+- **Inventory-Panel:** Dein Inventar (Live-Update)
+- **Status-Zeile:** Feedback zu Aktionen (temporär)
 
 ---
 
