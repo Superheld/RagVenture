@@ -8,4 +8,7 @@ __pycache__/
 
 # IDE
 .vscode/
-.idea/parser_debug.log
+.idea/
+
+# Logs
+parser_debug.log
