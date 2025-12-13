@@ -22,6 +22,8 @@ class SmartParser:
             return [{'verb': None, 'noun': None, 'adjects': None, 'raw': input_text}]
     
         input_syntax = self.parsing_model(input_text)
+
+        verb = []
         
         results = {
             'verb': None,
@@ -40,18 +42,18 @@ class SmartParser:
 
             # Hauptverb finden
             if token.dep_ == "ROOT" and token.pos_ == "VERB":
-                results['verb'] = token.lemma_ if token else None
+                verb = [token.lemma_]
+        
+                for child in token.children:
+                    if child.dep_ == 'oc':
+                        verb.insert(0, child.lemma_)
 
             # Nomen/Objekte finden
             if token.pos_ in ['NOUN']:
                 results['noun'] = token.text
 
-                # Adjektiv finden wenn vorhanden
-                # for child in token.children:
-                #     if child.pos_ == 'ADJ':
-                #         object_text = f"{child.text} {object_text}"
-                #         logging.info(f"     + Adjektiv: '{child.text}' → '{object_text}'")
-
+        results['verb'] = ' '.join(verb)
+        
         logging.info(f"=== Parsing Output: {results} ===")
         return [results]
  

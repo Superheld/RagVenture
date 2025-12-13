@@ -70,38 +70,47 @@ class GameController:
                 return f"Wohin genau?"
             else:
                 # Ziel finden
-                possible_targets = self.game_state['exits']
-                logging.info(f"LOCATION: {possible_targets}")
-                target = self.embedding_utils.match_entities(noun, [t for t in possible_targets])
-
-                result = self.model.move_player(target[0]['id'])
+                exit = self.embedding_utils.match_entities(
+                    noun, 
+                    [x for x in self.game_state['exits']]
+                )
+                result = self.model.move_player(exit[0]['id'])
 
                 if result:
                     return f'Du bist jetzt in {result[0]['name']}'
                 else:
-                    return 'Ups, gestolpert.'
+                    return 'Ups, gestolpert?'
 
-#        elif command['best_command'] == 'take':
-#            if not target:
-#                result = self.model.location_item()
-#                return"Was genau?"
-#
-#            else:
-#                result = self.model.take_item(target[0])
-#                
-#                if result:
-#                    return f'Du trägst jetzt {result[0]['i.name']}'
-#
-#        elif command['best_command'] == 'drop':
-#            if not target:
-#                result = self.model.player_inventory()
-#                return "Fallengelassen sag ich mal"
-#
-#            else:
-#                result = self.model.drop_item(target[0])
-#                
-#                if result:
-#                    return f'Du hast {result[0]['i.name']} abgelegt.'
+        elif command['best_command'] == 'take':
+            if not noun:
+                return"Was genau?"
+            else:
+                item = self.embedding_utils.match_entities(
+                    noun, 
+                    [x for x in self.game_state['items']]
+                )
+                result = self.model.take_item(item[0]['id'])
+
+                
+                if result:
+                    return f'Du trägst jetzt {result[0]['name']}'
+                else:
+                    return 'Ups, fallengelassen?'
+
+        elif command['best_command'] == 'drop':
+            if not noun:
+                return "Was denn?"
+            else:
+                item = self.embedding_utils.match_entities(
+                    noun,
+                    [x for x in self.game_state['inventory']]
+                )
+                result = self.model.drop_item(item[0]['id'])
+                
+                if result:
+                    return f'Du hast {result[0]['name']} abgelegt.'
+                else:
+                    return 'Ups, nicht da?'
 
         else:
             return f"Das konnte nicht entschlüsselt werden."
