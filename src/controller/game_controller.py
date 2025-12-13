@@ -3,14 +3,20 @@ import logging
 from view.game_view import GameView
 from model.game_model import GameModel
 from utils.smart_parser import SmartParser
+from utils.embedding_utils import EmbeddingUtils
 
 class GameController:
 
     def __init__(self):
+        
         self.view = GameView()
         self.model = GameModel()
         self.parser = SmartParser()
-        self.running = False
+        
+        self.embedding_utils = EmbeddingUtils()
+        
+        self.game_state = {}
+        self.game_running = False
 
         logging.basicConfig(
             filename='parser_debug.log',
@@ -20,15 +26,18 @@ class GameController:
 
     def _update_game_state(self):
 
-        self.view.update_panels(
-            location = self.model.current_location(),
-            items = self.model.location_content(),
-            exits = self.model.location_connections(),
-            inventory = self.model.player_inventory()
-        )
+        self.game_state = {
+            'location': self.model.current_location(),
+            'items': self.model.location_content(),
+            'exits': self.model.location_exits(),
+            'inventory': self.model.player_inventory()
+        }
+        
+        logging.info(f"State: {self.game_state}")
+        self.view.update_panels(**self.game_state)
 
     def run_game(self):
-        self.running = True
+        self.game_running = True
 
         self.view.show_welcome()
         input()
@@ -36,64 +45,63 @@ class GameController:
 
         self.view.refresh()
 
-        while self.running:
-            command = self.view.get_command()
-            status = self.process_command(command)
+        while self.game_running:
+            user_input = self.view.get_input()
+            status = self.process_input(user_input)
             self._update_game_state()
             self.view.refresh(status=status)
     
-    def process_command(self, command):
+    def process_input(self, input):
 
-        if command == 'quit':
-            self.running = False
+        if input == 'quit':
+            self.game_running = False
             return "Auf Wiedersehen!"
 
-        parsed = self.parser.parse(command)
+        parsed = self.parser.parse(input)
 
-        action = parsed[0]['action']
-        target = parsed[0]['target']
+        verb = parsed[0]['verb']
+        noun = parsed[0]['noun']
 
-        # print(parsed)
+        command = self.embedding_utils.verb_to_command(verb)
         
-        if action == 'go':
-            if not target:
-                return f"Wohin genau? {parsed}"
-                
+        if command['best_command'] == 'go':
 
+            if not noun:
+                return f"Wohin genau?"
             else:
-
                 # Ziel finden
-                locations = self.model.match_locations(target)
-                logging.info(f"LOCATION: {locations}")
+                possible_targets = self.game_state['exits']
+                logging.info(f"LOCATION: {possible_targets}")
+                target = self.embedding_utils.match_entities(noun, [t for t in possible_targets])
 
-                result = self.model.move_player(locations[0]['location_id'])
+                result = self.model.move_player(target[0]['id'])
 
                 if result:
-                    return f'Du bist jetzt in {result[0]['target.name']}\n'
+                    return f'Du bist jetzt in {result[0]['name']}'
                 else:
                     return 'Ups, gestolpert.'
 
-        elif action == 'take':
-            if not target:
-                result = self.model.location_item()
-                return"Was genau?"
-
-            else:
-                result = self.model.take_item(target[0])
-                
-                if result:
-                    return f'Du trägst jetzt {result[0]['i.name']}'
-
-        elif action == 'drop':
-            if not target:
-                result = self.model.player_inventory()
-                return "Fallengelassen sag ich mal"
-
-            else:
-                result = self.model.drop_item(target[0])
-                
-                if result:
-                    return f'Du hast {result[0]['i.name']} abgelegt.'
+#        elif command['best_command'] == 'take':
+#            if not target:
+#                result = self.model.location_item()
+#                return"Was genau?"
+#
+#            else:
+#                result = self.model.take_item(target[0])
+#                
+#                if result:
+#                    return f'Du trägst jetzt {result[0]['i.name']}'
+#
+#        elif command['best_command'] == 'drop':
+#            if not target:
+#                result = self.model.player_inventory()
+#                return "Fallengelassen sag ich mal"
+#
+#            else:
+#                result = self.model.drop_item(target[0])
+#                
+#                if result:
+#                    return f'Du hast {result[0]['i.name']} abgelegt.'
 
         else:
             return f"Das konnte nicht entschlüsselt werden."

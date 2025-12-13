@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
-from utils.embedding_utils import model
 
 
 class GameModel:
@@ -18,8 +17,6 @@ class GameModel:
             ),
             # notifications_min_severity='OFF'
         )
-
-        self.matching_model = model
 
     def close(self):
         self.driver.close()
@@ -43,7 +40,11 @@ class GameModel:
     def current_location(self):
         query = """
         MATCH (p:Player {id: 'player'})-[:IST_IN]->(location:Location)
-        RETURN location.id, location.name, location.description
+        RETURN 
+            location.id AS id, 
+            location.name AS name, 
+            location.description AS description,
+            location.name_emb AS name_emb
         """
         return self._run_query(query)
 
@@ -52,35 +53,35 @@ class GameModel:
         MATCH (p:Player {id: 'player'})-[:IST_IN]->(loc:Location)
         MATCH (item)-[:IST_IN]->(loc)
         WHERE item <> p
-        RETURN item.id, item.name, item.description
+        RETURN 
+            item.id AS id, 
+            item.name AS name, 
+            item.description AS description,
+            item.name_emb AS name_emb
         """
         return self._run_query(query)
 
-    def location_connections(self):
+    def location_exits(self):
         query = """
         MATCH (p:Player {id: 'player'})-[:IST_IN]->(location:Location)
-        MATCH (location)-[:ERREICHT]->(target:Location)
-        RETURN target.id, target.name, target.description
+        MATCH (location)-[:ERREICHT]->(exit:Location)
+        RETURN
+            exit.id AS id, 
+            exit.name AS name, 
+            exit.description AS description,
+            exit.name_emb AS name_emb
         """
         return self._run_query(query)
 
     def player_inventory(self):
         query = """
         MATCH (p:Player {id: 'player'})-[:TRÄGT]->(inventory:Item)
-        RETURN inventory.name
+        RETURN 
+            inventory.id AS id,
+            inventory.name AS name,
+            inventory.name_emb AS name_emb
         """
         return self._run_query(query)
-
-    def match_locations(self, noun):
-        query = """
-        CALL db.index.vector.queryNodes('location_name_index', 3, $embedding)
-        YIELD node, score
-        RETURN node.id AS location_id, node.name AS location_name, score
-        ORDER BY score DESC
-        """
-        embedding = self.matching_model.encode(noun)
-        params = {'embedding': embedding.tolist()}
-        return self._run_query(query, params=params)
 
     def move_player(self, to_location):
         query = """
@@ -88,7 +89,10 @@ class GameModel:
         MATCH (current)-[:ERREICHT]->(target:Location {id: $to_location})
         DELETE old
         CREATE (p)-[:IST_IN]->(target)
-        RETURN target.id, target.name, target.description
+        RETURN
+            target.id AS id, 
+            target.name AS name, 
+            target.description AS description
         """
         params = {'to_location': to_location}
         return self._run_query(query, params=params)
@@ -99,7 +103,7 @@ class GameModel:
         MATCH (i:Item {id: $item})-[old:IST_IN]->(loc)
         DELETE old
         CREATE (p)-[:TRÄGT]->(i)
-        RETURN i.name, loc.name
+        RETURN i.name AS name
         """
 
         params = {'item': item}
@@ -111,7 +115,7 @@ class GameModel:
         MATCH (p)-[:IST_IN]->(loc:Location)
         DELETE old
         CREATE (i)-[:IST_IN]->(loc)
-        RETURN i.name, loc.name
+        RETURN i.name AS name
         """
 
         params = {'item': item}
