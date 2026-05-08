@@ -4,7 +4,7 @@ python-dotenv>=1.0.0
 jupyter>=1.0.0
 sentence-transformers>=3.0.0
 spacy>=3.8.0
-umap
+umap-learn
 pandas
 plotly
 
